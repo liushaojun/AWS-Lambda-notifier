@@ -2,22 +2,24 @@ Transform: AWS::Serverless-2016-10-31
 
 Metadata:
   AWS::ServerlessRepo::Application:
-    Name: DingTalk-Notifier
-    Description: DingTalk Notifier
-    Author: Chris He
+    Name: WxPusher-Notifier
+    Description: WxPusher Notifier
+    Author: Niceman
     SpdxLicenseId: Apache-2.0
     LicenseUrl: LICENSE.txt
     ReadmeUrl: README_sar.md
-    Labels: ['DingTalk', 'Eventbridge']
-    HomePageUrl: https://github.com/Chris-wa-He/AWS-Lambda-notifier
+    Labels: ["WxPusher", "Eventbridge"]
+    HomePageUrl: https://github.com/liushaojun/AWS-Lambda-notifier
     SemanticVersion: 1.4.2
-    SourceCodeUrl: https://github.com/Chris-wa-He/AWS-Lambda-notifier
-
+    SourceCodeUrl: https://github.com/liushaojun/AWS-Lambda-notifier
 
 Parameters:
-  WebhookURL:
+  WXPUSHER_TOKEN:
     Type: String
-    Description: "DingTalk Chat bot URL includes security token.\n Sample: https://oapi.dingtalk.com/robot/send?access_token=XXXXXXXX"
+    Description: "WxPusher api access token. "
+  WXPUSHER_TOPIC_IDS:
+    Type: String
+    Description: "WxPusher topic ids"
 
 Resources:
   DingTalkNotifierLambdaLayer:
@@ -27,32 +29,35 @@ Resources:
       Description: v.1.0.5
       ContentUri: layer/
       CompatibleRuntimes:
-      - python3.6
-      - python3.7
-      - python3.8
-      - python3.9
+        - python3.6
+        - python3.7
+        - python3.8
+        - python3.9
 
   DingTalkNotifierLambda:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
       CodeUri: notifier/
       Handler: app.lambda_handler
-      Layers: 
+      Layers:
         - !Ref DingTalkNotifierLambdaLayer
       Environment:
         Variables:
-          SECRET_ARN:
-            Ref: WebhookSecret
-      Runtime: python3.9
+          WXPUSHER_TOKEN:
+            Ref: WXPUSHER_TOKEN
+          WXPUSHER_TOPIC_IDS:
+            Ref: WXPUSHER_TOPIC_IDS
+
+      Runtime: python3.6
       Policies:
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Ref WebhookSecret
       Events:
         SNSEvent:
           Type: SNS
-          Properties: 
+          Properties:
             Topic: !Ref ServerlessNotifierSNSTopic
-          
+
   ServerlessNotifierSNSTopic:
     Type: AWS::SNS::Topic
 
@@ -61,13 +66,13 @@ Resources:
     Properties:
       PolicyDocument:
         Id: SNSTopicPolicy
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Sid: Default_Statement
             Effect: Allow
             Principal:
               AWS: "*"
-            Action: 
+            Action:
               - sns:Publish
             Resource: !Ref ServerlessNotifierSNSTopic
             Condition:
@@ -77,7 +82,7 @@ Resources:
             Effect: Allow
             Principal:
               Service: "events.amazonaws.com"
-            Action: 
+            Action:
               - sns:Publish
             Resource: !Ref ServerlessNotifierSNSTopic
           - Sid: Costalerts_Statement
@@ -88,12 +93,12 @@ Resources:
               - sns:Publish
             Resource: !Ref ServerlessNotifierSNSTopic
       Topics:
-      - !Ref ServerlessNotifierSNSTopic
+        - !Ref ServerlessNotifierSNSTopic
 
   WebhookSecret:
     Type: AWS::SecretsManager::Secret
-    Properties: 
-      Description: 'WebhookSecret: Store Chat bot URL'
+    Properties:
+      Description: "WebhookSecret: Store Chat bot URL"
       SecretString:
         Ref: WebhookURL
 
@@ -101,10 +106,10 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
       Description: Rule for EC2 instance state change
-      EventPattern: 
-        source: 
+      EventPattern:
+        source:
           - aws.ec2
-        detail-type: 
+        detail-type:
           - EC2 Instance State-change Notification
         detail:
           state:
@@ -120,8 +125,7 @@ Resources:
               region: "$.region"
               state: "$.detail.state"
               time: "$.time"
-            InputTemplate:
-              "\"EC2状态变化告警: \\n时间: <time> \\n区域: <region> \\n实例id: <instance-id> \\n状态: <state>\""
+            InputTemplate: "\"EC2状态变化告警: \\n时间: <time> \\n区域: <region> \\n实例id: <instance-id> \\n状态: <state>\""
 
   EventRuleAwsHealth:
     Type: AWS::Events::Rule
@@ -142,8 +146,7 @@ Resources:
               time: "$.time"
               type: "$.detail.eventTypeCode"
               desc: "$.detail.eventDescription[0].latestDescription"
-            InputTemplate:
-              "\"AWS健康事件: \\n时间: <time> \\n区域: <region> \\n受影响资源: <resource> \\n类型: <type> \\n描述: <desc>\""
+            InputTemplate: "\"AWS健康事件: \\n时间: <time> \\n区域: <region> \\n受影响资源: <resource> \\n类型: <type> \\n描述: <desc>\""
 
   EventRuleAwsHealthAbuse:
     Type: AWS::Events::Rule
@@ -165,8 +168,7 @@ Resources:
               startTime: "$.detail.startTime"
               type: "$.detail.eventTypeCode"
               desc: "$.detail.eventDescription[0].latestDescription"
-            InputTemplate:
-              "\"AWS异常使用事件: \\n通知生成时间: <time> \\n事件开始时间: <startTime> \\n区域: <region> \\n受影响资源: <resource> \\n类型: <type> \\n描述: <desc>\""
+            InputTemplate: "\"AWS异常使用事件: \\n通知生成时间: <time> \\n事件开始时间: <startTime> \\n区域: <region> \\n受影响资源: <resource> \\n类型: <type> \\n描述: <desc>\""
 
   EventRuleCloudWatchAlarmStateChange:
     Type: AWS::Events::Rule
@@ -188,13 +190,12 @@ Resources:
               region: $.region
               resources: $.resources
               time: $.time
-            InputTemplate:
-              "\"Cloud Watch 状态变化告警: \\n时间: <time> \\n区域: <region> \\n资源: <resources> \\n告警名称: <alarmName> \\n描述: <description> \\n原因: <reason>\""
+            InputTemplate: "\"Cloud Watch 状态变化告警: \\n时间: <time> \\n区域: <region> \\n资源: <resources> \\n告警名称: <alarmName> \\n描述: <description> \\n原因: <reason>\""
 
 Outputs:
   EventBusName:
     Description: Event Bus name for integration.
-    Value: 'default'
+    Value: "default"
   SnsTopicArn:
     Description: SNS topic ARN for integration.
     Value: !Ref ServerlessNotifierSNSTopic
