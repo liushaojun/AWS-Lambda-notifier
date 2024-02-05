@@ -10,16 +10,16 @@ Metadata:
     ReadmeUrl: README_sar.md
     Labels: ["WxPusher", "Eventbridge"]
     HomePageUrl: https://github.com/liushaojun/AWS-Lambda-notifier
-    SemanticVersion: 1.4.2
+    SemanticVersion: 1.4.4
     SourceCodeUrl: https://github.com/liushaojun/AWS-Lambda-notifier
 
 Parameters:
-  WXPUSHER_TOKEN:
+  WxpusherToken:
     Type: String
-    Description: "WxPusher api access token. "
-  WXPUSHER_TOPIC_IDS:
+    Description: "WxPusher访问令牌"
+  WxpusherTopicIds:
     Type: String
-    Description: "WxPusher topic ids"
+    Description: "WxPusher主题ID列表"
 
 Resources:
   DingTalkNotifierLambdaLayer:
@@ -44,14 +44,13 @@ Resources:
       Environment:
         Variables:
           WXPUSHER_TOKEN:
-            Ref: WXPUSHER_TOKEN
+            Ref: WxpusherToken
           WXPUSHER_TOPIC_IDS:
-            Ref: WXPUSHER_TOPIC_IDS
+            Ref: WxpusherTopicIds
 
       Runtime: python3.6
       Policies:
-        - AWSSecretsManagerGetSecretValuePolicy:
-            SecretArn: !Ref WebhookSecret
+
       Events:
         SNSEvent:
           Type: SNS
@@ -94,13 +93,6 @@ Resources:
             Resource: !Ref ServerlessNotifierSNSTopic
       Topics:
         - !Ref ServerlessNotifierSNSTopic
-
-  WebhookSecret:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      Description: "WebhookSecret: Store Chat bot URL"
-      SecretString:
-        Ref: WebhookURL
 
   EventRuleEC2StateChange:
     Type: AWS::Events::Rule
