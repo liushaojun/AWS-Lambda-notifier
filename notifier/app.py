@@ -3,10 +3,6 @@ import os
 from wxpusher import WxPusher
 
 
-from dingtalk import DingTalk
-from alarm import Alarm
-
-
 token = os.environ['WXPUSHER_TOKEN']
 topic_ids = os.environ['WXPUSHER_TOPIC_IDS']
 # Initial DingTalk handler
