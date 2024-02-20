@@ -1,4 +1,3 @@
-import boto3
 import os
 from wxpusher import WxPusher
 

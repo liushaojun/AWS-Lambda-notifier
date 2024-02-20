@@ -10,7 +10,7 @@ Metadata:
     ReadmeUrl: README_sar.md
     Labels: ["WxPusher", "Eventbridge"]
     HomePageUrl: https://github.com/liushaojun/AWS-Lambda-notifier
-    SemanticVersion: 1.4.4
+    SemanticVersion: 1.4.8
     SourceCodeUrl: https://github.com/liushaojun/AWS-Lambda-notifier
 
 Parameters:
@@ -22,25 +22,22 @@ Parameters:
     Description: "WxPusher主题ID列表"
 
 Resources:
-  DingTalkNotifierLambdaLayer:
+  WxPusherNotifierLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
       LayerName: DingTalkNotifierCommon
       Description: v.1.0.5
       ContentUri: layer/
       CompatibleRuntimes:
-        - python3.6
-        - python3.7
-        - python3.8
         - python3.9
 
-  DingTalkNotifierLambda:
+  WxPusherNotifierLambda:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
       CodeUri: notifier/
       Handler: app.lambda_handler
       Layers:
-        - !Ref DingTalkNotifierLambdaLayer
+        - !Ref WxPusherNotifierLambdaLayer
       Environment:
         Variables:
           WXPUSHER_TOKEN:
@@ -48,9 +45,9 @@ Resources:
           WXPUSHER_TOPIC_IDS:
             Ref: WxpusherTopicIds
 
-      Runtime: python3.6
+      Runtime: python3.9
       Policies:
-
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Events:
         SNSEvent:
           Type: SNS
